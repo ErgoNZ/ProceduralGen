@@ -19,10 +19,13 @@ public class RoomGeneration : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        //Sets the seed for the map
         Random.InitState(Seed);
+        //Spawns basic platform
         MapParts.Add(Instantiate(Prefabs[1], new Vector3(), new Quaternion(0,0,0,0)));
+        //Grabs nodes from basic platform
         CheckForNodes(MapParts[0]);
-        Debug.Log(Nodes.Count);
+        //Start generating the map!
         GenerateSpawnArea();
     }
 
@@ -55,6 +58,7 @@ public class RoomGeneration : MonoBehaviour
                 {
                     NewPiecePos = new(NodeParrentPos.x, NodeParrentPos.y, NodeParrentPos.z + 10);
                 }
+
                 GameObject PieceOfMap = Instantiate(Prefabs[PieceSelected], NewPiecePos, new Quaternion(0, 0, 0, 0));
                 List<GameObject> NewPieceNodes = new();
                 foreach (Transform child in PieceOfMap.transform)
@@ -72,12 +76,16 @@ public class RoomGeneration : MonoBehaviour
                     if (MapPiece.GetComponent<BoxCollider>().bounds.Intersects(BoundsOfNewPiece))
                     {
                         IllegalPiece = true;
+                        //This leaves big gaps in the map!
+                        Destroy(Nodes[0]);
+                        Nodes.RemoveAt(0);
                         break;
                     }
                 }
 
                 foreach (GameObject Node in NewPieceNodes)
                 {
+                    //Makes sure that the nodes are connecting and a prefab can be placed there
                     if (Node.transform.position == Nodes[0].transform.position)
                     {
                         NodesConnect = true;
@@ -87,25 +95,30 @@ public class RoomGeneration : MonoBehaviour
                     }
                 }
 
+                //If this room is a valid, remove the nodes used, spawn it in and add any nodes it has to the list.
                 if (!IllegalPiece && NodesConnect)
                 {
                     Destroy(Nodes[0]);
                     Nodes.RemoveAt(0);
                     Nodes.AddRange(NewPieceNodes);
                     MapParts.Add(PieceOfMap);
+                    Debug.Log("A piece was added on requested piece: " + (i + 1));
                     break;
                 }
                 else
                 {
+                    //This destroyies the node and sends an error to console for debugging
                     if(r == RetryLimit - 1)
                     {
                         Destroy(Nodes[0]);
                         Nodes.RemoveAt(0);
+                        Debug.LogError("Requested piece completely failed!: " + (i + 1));
                     }
                     Destroy(PieceOfMap);
                 }
             }
         }
+        //Just a debugging thing to see if all rooms properly spawned
         Debug.Log(MapParts.Count);
     }
 
